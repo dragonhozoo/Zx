@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#202C33">
+<title>WhatsApp Clone - DGXEONHOZO</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ================= GLOBAL ================= */
+:root {
+  --wa-bg: #0B141A;
+  --wa-panel: #111B21;
+  --wa-header: #202C33;
+  --wa-border: #2A3942;
+  --wa-input: #2A3942;
+  --wa-text: #E9EDEF;
+  --wa-text2: #8696A0;
+  --wa-green: #25D366;
+  --wa-teal: #128C7E;
+  --wa-blue: #53BDEB;
+  --wa-sent: #005C4B;
+  --wa-received: #202C33;
+  --wa-danger: #FF3B30;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--wa-bg); color: var(--wa-text); height:100vh; overflow:hidden;
+  display:flex; justify-content:center; align-items:center;
+}
+button { cursor:pointer; font-family:inherit; border:none; outline:none; background:none; }
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-thumb { background: #374248; border-radius:3px; }
+
+/* ================= OUTLINE BUTTON ================= */
+.btn-outline {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:12px 24px; border-radius:30px; font-weight:600; font-size:15px;
+  border:2px solid var(--wa-green); color:var(--wa-green);
+  transition:all .3s cubic-bezier(.4,0,.2,1); position:relative; overflow:hidden;
+}
+.btn-outline::before {
+  content:''; position:absolute; inset:0; background:var(--wa-green);
+  transform:scaleX(0); transform-origin:left; transition:transform .3s; z-index:-1;
+}
+.btn-outline:hover { color:#0B141A; }
+.btn-outline:hover::before { transform:scaleX(1); }
+.btn-outline:active { transform:scale(.97); }
+
+/* ================= AUTH ================= */
+.auth-screen {
+  position:fixed; inset:0; z-index:1000; display:flex; justify-content:center; align-items:center;
+  background:linear-gradient(160deg,#0B141A 0%,#112B2B 50%,#075E54 100%); padding:20px;
+  transition:opacity .5s, visibility .5s;
+}
+.auth-screen.hide { opacity:0; visibility:hidden; pointer-events:none; }
+.auth-card {
+  width:100%; max-width:400px; background:var(--wa-panel); border-radius:24px;
+  padding:36px 28px; box-shadow:0 25px 80px rgba(0,0,0,.6); position:relative; overflow:hidden;
+}
+.auth-logo {
+  width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,var(--wa-green),var(--wa-teal));
+  display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900;
+  color:white; margin:0 auto 16px; box-shadow:0 8px 30px rgba(37,211,102,.4);
+}
+.auth-title { text-align:center; font-size:24px; font-weight:700; margin-bottom:4px; }
+.auth-sub { text-align:center; font-size:13px; color:var(--wa-text2); margin-bottom:24px; }
+.tab-bar { display:flex; background:#111B21; border-radius:14px; padding:5px; margin-bottom:20px; }
+.tab {
+  flex:1; padding:11px; text-align:center; color:var(--wa-text2); font-weight:600; font-size:14px;
+  border-radius:10px; transition:.3s;
+}
+.tab.active { background:linear-gradient(135deg,var(--wa-green),var(--wa-teal)); color:white; }
+.form-group { margin-bottom:14px; position:relative; }
+.form-group label { display:block; font-size:11px; color:var(--wa-text2); margin-bottom:6px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+.form-input {
+  width:100%; padding:14px 16px 14px 46px; background:var(--wa-input); border:2px solid transparent;
+  border-radius:12px; color:var(--wa-text); font-size:15px; outline:none; transition:.3s;
+}
+.form-input:focus { border-color:var(--wa-green); box-shadow:0 0 0 4px rgba(37,211,102,.15); }
+.form-icon { position:absolute; left:16px; bottom:15px; color:var(--wa-text2); font-size:16px; }
+.form-icon.top { bottom:auto; top:38px; }
+.auth-error,.auth-success {
+  padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:14px; display:none; align-items:center; gap:10px;
+}
+.auth-error { background:rgba(255,59,48,.15); border:1px solid rgba(255,59,48,.4); color:#FF6B61; }
+.auth-success { background:rgba(37,211,102,.15); border:1px solid rgba(37,211,102,.4); color:var(--wa-green); }
+.auth-error.show,.auth-success.show { display:flex; }
+.upload-avatar {
+  width:100px; height:100px; border-radius:50%; background:var(--wa-input); margin:0 auto 16px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;
+  border:3px dashed var(--wa-green); transition:.3s;
+}
+.upload-avatar img { width:100%; height:100%; object-fit:cover; display:none; }
+.upload-avatar.has-image img { display:block; }
+.upload-avatar.has-image i { display:none; }
+.upload-avatar i { font-size:30px; color:var(--wa-green); }
+
+/* ================= APP LAYOUT ================= */
+.app { width:100%; height:100%; display:none; flex-direction:row; overflow:hidden; background:var(--wa-bg); }
+.app.show { display:flex; }
+
+@media (min-width:768px) {
+  body { background:#0B141A; }
+  .app { max-width:1400px; height:96vh; border-radius:16px; overflow:hidden; box-shadow:0 25px 80px rgba(0,0,0,.7); }
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  width:35%; min-width:320px; max-width:420px; background:var(--wa-panel);
+  border-right:1px solid var(--wa-border); display:flex; flex-direction:column; height:100%;
+}
+@media (max-width:768px) {
+  .sidebar { width:100%; max-width:none; border:none; }
+  .sidebar.hide-mobile { display:none; }
+}
+.sidebar-header {
+  padding:10px 16px; background:var(--wa-header); display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--wa-border); min-height:60px;
+}
+.sidebar-header .avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--wa-green),var(--wa-teal)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:white; overflow:hidden; cursor:pointer; flex-shrink:0; }
+.sidebar-header .avatar img { width:100%; height:100%; object-fit:cover; }
+.icon-btn { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--wa-text2); font-size:18px; transition:.2s; }
+.icon-btn:hover { background:rgba(255,255,255,.08); }
+.search-box {
+  padding:8px 12px; background:var(--wa-panel); border-bottom:1px solid var(--wa-border);
+}
+.search-box input {
+  width:100%; padding:10px 16px 10px 40px; background:var(--wa-input); border:none; border-radius:8px;
+  color:var(--wa-text); font-size:14px; outline:none;
+}
+.search-wrapper { position:relative; }
+.search-wrapper i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--wa-text2); font-size:14px; }
+.chat-list { flex:1; overflow-y:auto; }
+.chat-item {
+  display:flex; align-items:center; gap:14px; padding:12px 16px; cursor:pointer; transition:background .2s;
+  border-bottom:1px solid rgba(255,255,255,.03);
+}
+.chat-item:hover,.chat-item.active { background:#2A3942; }
+.chat-avatar {
+  width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,var(--wa-green),var(--wa-teal));
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; color:white;
+  flex-shrink:0; overflow:hidden; position:relative;
+}
+.chat-avatar img { width:100%; height:100%; object-fit:cover; }
+.chat-avatar .online-dot { position:absolute; bottom:2px; right:2px; width:12px; height:12px; background:var(--wa-green); border-radius:50%; border:2px solid var(--wa-panel); }
+.chat-info { flex:1; min-width:0; }
+.chat-info h4 { font-size:15px; font-weight:500; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-info p { font-size:13px; color:var(--wa-text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-meta { text-align:right; flex-shrink:0; }
+.chat-meta .time { font-size:11px; color:var(--wa-text2); display:block; margin-bottom:4px; }
+.chat-meta .badge { background:var(--wa-green); color:#0B141A; font-size:10px; font-weight:700; min-width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-left:auto; padding:0 5px; }
+
+/* ================= CHAT VIEW ================= */
+.chat-view { flex:1; display:flex; flex-direction:column; height:100%; background:var(--wa-bg); position:relative; }
+@media (max-width:768px) {
+  .chat-view { position:absolute; inset:0; z-index:200; transform:translateX(100%); transition:transform .3s; }
+  .chat-view.show-mobile { transform:translateX(0); }
+}
+.chat-header {
+  padding:8px 16px; background:var(--wa-header); display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--wa-border); min-height:60px; flex-shrink:0;
+}
+.chat-header .back-btn { display:none; }
+@media (max-width:768px) { .chat-header .back-btn { display:flex; } }
+.chat-header-info { flex:1; min-width:0; cursor:pointer; }
+.chat-header-info h3 { font-size:16px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-header-info p { font-size:12px; color:var(--wa-text2); }
+.chat-header-info p.typing { color:var(--wa-green); }
+.chat-header-actions { display:flex; gap:2px; }
+.chat-area {
+  flex:1; overflow-y:auto; padding:12px 8%; background:var(--wa-bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='%23182229' fill-opacity='.3'%3E%3Ccircle cx='20' cy='20' r='1.5'/%3E%3Ccircle cx='80' cy='60' r='1.5'/%3E%3Ccircle cx='140' cy='30' r='1.5'/%3E%3Ccircle cx='50' cy='120' r='1.5'/%3E%3Ccircle cx='160' cy='150' r='1.5'/%3E%3Ccircle cx='100' cy='180' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+.message {
+  max-width:75%; padding:7px 9px 8px 10px; border-radius:8px; margin-bottom:4px; position:relative;
+  font-size:14.2px; line-height:1.4; word-wrap:break-word; color:var(--wa-text);
+  box-shadow:0 1px 1px rgba(0,0,0,.13); animation:msgIn .25s ease;
+}
+@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.message.sent { background:var(--wa-sent); margin-left:auto; border-top-right-radius:2px; }
+.message.received { background:var(--wa-received); margin-right:auto; border-top-left-radius:2px; }
+.message .msg-image { max-width:100%; border-radius:6px; margin-bottom:4px; cursor:pointer; display:block; }
+.message .msg-video { max-width:100%; border-radius:6px; margin-bottom:4px; display:block; }
+.message .msg-audio { width:100%; margin-bottom:4px; }
+.message .msg-meta { display:flex; align-items:center; gap:4px; justify-content:flex-end; font-size:11px; color:var(--wa-text2); margin-top:2px; }
+.message.sent .msg-meta { color:rgba(255,255,255,.6); }
+.read-tick { color:var(--wa-blue); }
+.typing-indicator { display:inline-flex; gap:4px; padding:12px 16px; background:var(--wa-received); border-radius:15px; margin-bottom:10px; }
+.typing-indicator span { width:7px; height:7px; background:var(--wa-text2); border-radius:50%; animation:typing 1.3s infinite; }
+.typing-indicator span:nth-child(2){animation-delay:.15s} .typing-indicator span:nth-child(3){animation-delay:.3s}
+@keyframes typing { 0%,60%,100%{transform:translateY(0);opacity:.5} 30%{transform:translateY(-5px);opacity:1} }
+.date-divider { text-align:center; margin:12px 0; }
+.date-divider span { background:#182229; color:var(--wa-text2); font-size:11.5px; padding:5px 12px; border-radius:8px; }
+
+/* Input */
+.chat-input-area {
+  padding:8px 12px; background:var(--wa-header); display:flex; align-items:flex-end; gap:8px; flex-shrink:0;
+}
+.input-wrapper {
+  flex:1; background:var(--wa-input); border-radius:24px; padding:6px 14px; display:flex; align-items:flex-end; gap:8px;
+  min-height:44px; max-height:120px;
+}
+.input-wrapper textarea {
+  flex:1; background:transparent; border:none; outline:none; color:var(--wa-text); font-size:15.5px;
+  resize:none; max-height:100px; line-height:1.4; padding:6px 0; font-family:inherit;
+}
+.send-btn { width:44px; height:44px; border-radius:50%; background:var(--wa-green); color:white; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; transition:.2s; }
+.send-btn:active { transform:scale(.9); }
+.mic-btn { background:transparent; color:var(--wa-text2); font-size:20px; }
+
+/* Empty state */
+.empty-state { flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--wa-text2); text-align:center; padding:20px; }
+.empty-state i { font-size:80px; margin-bottom:20px; opacity:.3; }
+
+/* Modal */
+.modal { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; justify-content:center; align-items:center; z-index:500; opacity:0; pointer-events:none; transition:.3s; padding:20px; }
+.modal.show { opacity:1; pointer-events:all; }
+.modal-content { background:var(--wa-header); border-radius:16px; padding:28px; max-width:360px; width:100%; text-align:center; }
+.modal-content h3 { margin-bottom:16px; }
+.modal-avatar { width:100px; height:100px; border-radius:50%; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:700; background:linear-gradient(135deg,var(--wa-green),var(--wa-teal)); overflow:hidden; border:3px solid var(--wa-green); }
+.modal-avatar img { width:100%; height:100%; object-fit:cover; }
+.modal-info { background:var(--wa-input); border-radius:10px; padding:14px; text-align:left; margin-bottom:18px; font-size:13px; color:var(--wa-text2); }
+.modal-info div { margin-bottom:8px; display:flex; gap:10px; align-items:center; }
+.modal-info i { color:var(--wa-green); width:16px; }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:rgba(35,49,56,.95); color:var(--wa-text); padding:10px 20px; border-radius:20px;
+  font-size:13px; z-index:1000; opacity:0; pointer-events:none; transition:.3s; backdrop-filter:blur(8px);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Preview overlay */
+.preview-overlay { position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:800; display:flex; justify-content:center; align-items:center; opacity:0; pointer-events:none; transition:.3s; }
+.preview-overlay.show { opacity:1; pointer-events:all; }
+.preview-overlay img,.preview-overlay video { max-width:95%; max-height:90%; border-radius:8px; }
+.preview-close { position:absolute; top:20px; right:20px; background:rgba(0,0,0,.6); color:white; font-size:22px; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+/* Sidebar profile drawer */
+.profile-drawer {
+  position:absolute; top:0; left:0; bottom:0; width:340px; max-width:85%; background:var(--wa-panel); z-index:400;
+  transform:translateX(-100%); transition:transform .3s; display:flex; flex-direction:column;
+}
+.profile-drawer.show { transform:translateX(0); }
+.profile-drawer .drawer-header { padding:20px; background:var(--wa-header); display:flex; align-items:center; gap:16px; }
+.profile-drawer .drawer-menu { flex:1; overflow-y:auto; }
+.drawer-item { padding:14px 22px; display:flex; align-items:center; gap:16px; font-size:15px; cursor:pointer; transition:.2s; color:var(--wa-text); }
+.drawer-item:hover { background:var(--wa-input); }
+.drawer-item i { width:22px; color:var(--wa-text2); }
+.drawer-item.danger { color:#FF6B61; }
+.drawer-item.danger i { color:#FF6B61; }
+.drawer-overlay { position:absolute; inset:0; background:rgba(0,0,0,.5); z-index:399; opacity:0; pointer-events:none; transition:.3s; }
+.drawer-overlay.show { opacity:1; pointer-events:all; }
+
+/* Media buttons grid */
+.media-menu {
+  position:absolute; bottom:60px; right:12px; background:var(--wa-header); border-radius:16px; padding:16px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:18px; z-index:200; opacity:0; pointer-events:none; transition:.3s; transform:translateY(10px) scale(.95);
+}
+.media-menu.show { opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
+.media-option { display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--wa-text2); font-size:11px; transition:.2s; }
+.media-option i { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; color:white; }
+.media-option:hover { transform:scale(1.05); }
+.media-option.photo i { background:#007BFF; }
+.media-option.camera i { background:#FF4B8B; }
+.media-option.doc i { background:#7F66FF; }
+.media-option.audio i { background:#FF8C00; }
+.media-option.location i { background:#FF3B30; }
+.media-option.contact i { background:#17B978; }
+</style>
+</head>
+<body>
+
+<!-- ================= AUTH ================= -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">WA</div>
+    <div class="auth-title">DGXEONHOZO Chat</div>
+    <div class="auth-sub">Real-time Chat & Call</div>
+    <div class="tab-bar">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">Login</button>
+      <button class="tab" id="tabRegister" onclick="switchTab('register')">Register</button>
+    </div>
+    <div class="auth-error" id="authError"><i class="fas fa-exclamation-circle"></i><span id="authErrorText"></span></div>
+    <div class="auth-success" id="authSuccess"><i class="fas fa-check-circle"></i><span id="authSuccessText"></span></div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="form-group"><label>Email</label><input type="email" class="form-input" id="loginEmail" placeholder="email@example.com"><i class="fas fa-envelope form-icon top"></i></div>
+      <div class="form-group"><label>Password</label><input type="password" class="form-input" id="loginPassword" placeholder="••••••"><i class="fas fa-lock form-icon top"></i></div>
+      <button class="btn-outline" style="width:100%" onclick="handleLogin()"><i class="fas fa-sign-in-alt"></i> Login</button>
+      <button class="btn-outline" style="width:100%;margin-top:10px;border-color:var(--wa-text2);color:var(--wa-text2)" onclick="switchTab('register')">Belum punya akun? Register</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none">
+      <div class="upload-avatar" id="uploadAvatar" onclick="document.getElementById('avatarInput').click()">
+        <img id="avatarPreview" src="" alt=""><i class="fas fa-camera"></i>
+      </div>
+      <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatar(event)">
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" class="form-input" id="regName" placeholder="Nama kamu"><i class="fas fa-id-card form-icon top"></i></div>
+      <div class="form-group"><label>Email</label><input type="email" class="form-input" id="regEmail" placeholder="email@example.com"><i class="fas fa-envelope form-icon top"></i></div>
+      <div class="form-group"><label>Password</label><input type="password" class="form-input" id="regPassword" placeholder="Min 6 karakter"><i class="fas fa-lock form-icon top"></i></div>
+      <div class="form-group"><label>Konfirmasi Password</label><input type="password" class="form-input" id="regPassword2" placeholder="Ulangi password"><i class="fas fa-lock form-icon top"></i></div>
+      <button class="btn-outline" style="width:100%" onclick="handleRegister()"><i class="fas fa-user-plus"></i> Daftar</button>
+      <button class="btn-outline" style="width:100%;margin-top:10px;border-color:var(--wa-text2);color:var(--wa-text2)" onclick="switchTab('login')">Sudah punya akun? Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div class="app" id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="avatar" id="myAvatar" onclick="openProfileDrawer()">?</div>
+      <div style="flex:1"></div>
+      <button class="icon-btn" onclick="showToast('Fitur: New Group')"><i class="fas fa-users"></i></button>
+      <button class="icon-btn" onclick="showToast('Fitur: New Status')"><i class="fas fa-circle-notch"></i></button>
+      <button class="icon-btn" onclick="showToast('Fitur: Menu')"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+    <div class="search-box">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Cari atau mulai chat baru" oninput="filterChats()">
+      </div>
+    </div>
+    <div class="chat-list" id="chatList"></div>
+  </div>
+
+  <!-- CHAT VIEW -->
+  <div class="chat-view" id="chatView">
+    <div class="chat-header" id="chatHeader" style="display:none">
+      <button class="icon-btn back-btn" onclick="closeChatMobile()"><i class="fas fa-arrow-left"></i></button>
+      <div class="chat-avatar" id="headerAvatar"></div>
+      <div class="chat-header-info" onclick="showChatProfile()">
+        <h3 id="headerName">-</h3>
+        <p id="headerStatus">online</p>
+      </div>
+      <div class="chat-header-actions">
+        <button class="icon-btn" onclick="showToast('Video call')"><i class="fas fa-video"></i></button>
+        <button class="icon-btn" onclick="showToast('Voice call')"><i class="fas fa-phone"></i></button>
+        <button class="icon-btn" onclick="showToast('Menu')"><i class="fas fa-ellipsis-v"></i></button>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <i class="fab fa-whatsapp"></i>
+      <h2>DGXEONHOZO Chat</h2>
+      <p style="margin-top:8px;font-size:14px">Pilih chat untuk mulai mengirim pesan</p>
+    </div>
+
+    <div class="chat-area" id="chatArea" style="display:none"></div>
+
+    <div class="chat-input-area" id="chatInputArea" style="display:none">
+      <button class="icon-btn" onclick="toggleMediaMenu()"><i class="fas fa-plus"></i></button>
+      <div class="input-wrapper">
+        <textarea id="messageInput" placeholder="Ketik pesan" rows="1" oninput="onInputChange()"></textarea>
+        <button class="icon-btn" onclick="showToast('Emoji')"><i class="far fa-smile"></i></button>
+      </div>
+      <button class="send-btn" id="sendBtn" style="display:none" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+      <button class="send-btn mic-btn" id="micBtn" onclick="showToast('Voice recording')"><i class="fas fa-microphone"></i></button>
+      <div class="media-menu" id="mediaMenu">
+        <button class="media-option photo" onclick="attachMedia('image/*')"><i class="fas fa-image"></i>Foto</button>
+        <button class="media-option camera" onclick="attachMedia('image/*', true)"><i class="fas fa-camera"></i>Kamera</button>
+        <button class="media-option doc" onclick="attachMedia('*/*')"><i class="fas fa-file"></i>Dokumen</button>
+        <button class="media-option audio" onclick="attachMedia('audio/*')"><i class="fas fa-headphones"></i>Audio</button>
+        <button class="media-option location" onclick="showToast('Location')"><i class="fas fa-map-marker-alt"></i>Lokasi</button>
+        <button class="media-option contact" onclick="showToast('Contact')"><i class="fas fa-user"></i>Kontak</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeProfileDrawer()"></div>
+<div class="profile-drawer" id="profileDrawer">
+  <div class="drawer-header">
+    <div class="modal-avatar" id="drawerAvatar">?</div>
+    <div>
+      <h3 id="drawerName">User</h3>
+      <p style="font-size:13px;color:var(--wa-text2)" id="drawerEmail">-</p>
+    </div>
+  </div>
+  <div class="drawer-menu">
+    <div class="drawer-item" onclick="showToast('Profile')"><i class="fas fa-user-circle"></i> Profil Saya</div>
+    <div class="drawer-item" onclick="showToast('Groups')"><i class="fas fa-users"></i> Grup Baru</div>
+    <div class="drawer-item" onclick="showToast('Status')"><i class="fas fa-circle-notch"></i> Status</div>
+    <div class="drawer-item" onclick="showToast('Privacy Settings')"><i class="fas fa-lock"></i> Privasi</div>
+    <div class="drawer-item" onclick="showToast('Settings')"><i class="fas fa-cog"></i> Pengaturan</div>
+    <div class="drawer-item danger" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal" id="profileModal" onclick="if(event.target===this)closeModal('profileModal')">
+  <div class="modal-content">
+    <div class="modal-avatar" id="modalAvatar">?</div>
+    <h3 id="modalName">-</h3>
+    <div class="modal-info">
+      <div><i class="fas fa-envelope"></i><span id="modalEmail">-</span></div>
+      <div><i class="fas fa-circle" style="color:var(--wa-green)"></i><span>Online</span></div>
+    </div>
+    <button class="btn-outline" style="width:100%" onclick="closeModal('profileModal')"><i class="fas fa-check"></i> Tutup</button>
+  </div>
+</div>
+
+<!-- Preview -->
+<div class="preview-overlay" id="previewOverlay" onclick="closePreview()">
+  <button class="preview-close" onclick="closePreview()"><i class="fas fa-times"></i></button>
+  <div id="previewContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+/* ============================================================
+   FIREBASE IMPORT (v10.7.1 modular)
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc,
+  query, where, orderBy, onSnapshot, serverTimestamp, updateDoc,
+  deleteDoc, limit
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+/* ============================================================
+   KONFIGURASI FIREBASE — DGXEONHOZO
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyAZt8450ie5mgvcGMQGtz-18nh31vPnJfc",
+  authDomain: "dgxeonhozo.firebaseapp.com",
+  databaseURL: "https://dgxeonhozo-default-rtdb.firebaseio.com",
+  projectId: "dgxeonhozo",
+  storageBucket: "dgxeonhozo.firebasestorage.app",
+  messagingSenderId: "1099436262408",
+  appId: "1:1099436262408:web:963a1a0fd5095f4c5afdbd",
+  measurementId: "G-R1SNQQXVP0"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentUser = null;
+let currentChat = null;
+let unsubscribeMessages = null;
+let unsubscribeChats = null;
+let allChats = [];
+let allUsers = [];
+
+/* ============================================================
+   DOM
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const authScreen = $('authScreen');
+const appEl = $('app');
+const chatListEl = $('chatList');
+const chatArea = $('chatArea');
+const messageInput = $('messageInput');
+const sendBtn = $('sendBtn');
+const micBtn = $('micBtn');
+const sidebar = $('sidebar');
+const chatView = $('chatView');
+
+/* ============================================================
+   AUTH UI
+   ============================================================ */
+window.switchTab = (tab) => {
+  $('tabLogin').classList.toggle('active', tab === 'login');
+  $('tabRegister').classList.toggle('active', tab === 'register');
+  $('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  $('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  clearAuthMsgs();
+};
+
+function clearAuthMsgs() {
+  $('authError').classList.remove('show');
+  $('authSuccess').classList.remove('show');
+}
+function showAuthError(msg) {
+  $('authErrorText').textContent = msg;
+  $('authError').classList.add('show');
+  $('authSuccess').classList.remove('show');
+  setTimeout(clearAuthMsgs, 4000);
+}
+function showAuthSuccess(msg) {
+  $('authSuccessText').textContent = msg;
+  $('authSuccess').classList.add('show');
+  $('authError').classList.remove('show');
+}
+
+let uploadedAvatarData = null;
+window.handleAvatar = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) return showAuthError('Maks 2MB');
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    uploadedAvatarData = ev.target.result;
+    $('avatarPreview').src = ev.target.result;
+    $('uploadAvatar').classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+};
+
+/* ============================================================
+   REGISTER
+   ============================================================ */
+window.handleRegister = async () => {
+  const name = $('regName').value.trim();
+  const email = $('regEmail').value.trim();
+  const pass = $('regPassword').value;
+  const pass2 = $('regPassword2').value;
+
+  if (!name) return showAuthError('Nama wajib diisi');
+  if (!email) return showAuthError('Email wajib diisi');
+  if (pass.length < 6) return showAuthError('Password min 6 karakter');
+  if (pass !== pass2) return showAuthError('Konfirmasi password tidak cocok');
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, { displayName: name });
+
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      uid: cred.user.uid,
+      name,
+      email,
+      avatar: uploadedAvatarData || null,
+      createdAt: serverTimestamp(),
+      online: true
+    });
+
+    showAuthSuccess('Registrasi berhasil!');
+    uploadedAvatarData = null;
+    $('uploadAvatar').classList.remove('has-image');
+  } catch (err) {
+    showAuthError(err.message);
+  }
+};
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+window.handleLogin = async () => {
+  const email = $('loginEmail').value.trim();
+  const pass = $('loginPassword').value;
+  if (!email || !pass) return showAuthError('Email & password wajib diisi');
+
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    showAuthSuccess('Login berhasil!');
+  } catch (err) {
+    showAuthError(err.message);
+  }
+};
+
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+window.handleLogout = async () => {
+  if (!confirm('Yakin ingin logout?')) return;
+  if (currentUser) {
+    await updateDoc(doc(db, 'users', currentUser.uid), { online: false });
+  }
+  await signOut(auth);
+};
+
+/* ============================================================
+   AUTH STATE
+   ============================================================ */
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.data() || {};
+    await updateDoc(doc(db, 'users', user.uid), { online: true });
+    const initials = (data.name || user.email).substring(0, 2).toUpperCase();
+    $('myAvatar').innerHTML = data.avatar ? `<img src="${data.avatar}">` : initials;
+    $('drawerAvatar').innerHTML = data.avatar ? `<img src="${data.avatar}">` : initials;
+    $('drawerName').textContent = data.name || user.email;
+    $('drawerEmail').textContent = user.email;
+    authScreen.classList.add('hide');
+    appEl.classList.add('show');
+    loadChats();
+  } else {
+    currentUser = null;
+    authScreen.classList.remove('hide');
+    appEl.classList.remove('show');
+    if (unsubscribeChats) unsubscribeChats();
+    if (unsubscribeMessages) unsubscribeMessages();
+  }
+});
+
+/* ============================================================
+   LOAD CHATS
+   ============================================================ */
+async function loadChats() {
+  const usersSnap = await getDocs(collection(db, 'users'));
+  allUsers = [];
+  usersSnap.forEach(d => {
+    if (d.id !== currentUser.uid) allUsers.push({ id: d.id, ...d.data() });
+  });
+
+  const chatQuery = query(
+    collection(db, 'chats'),
+    where('members', 'array-contains', currentUser.uid)
+  );
+  const chatSnap = await getDocs(chatQuery);
+  allChats = [];
+  chatSnap.forEach(d => allChats.push({ id: d.id, ...d.data() }));
+
+  renderChatList();
+
+  if (unsubscribeChats) unsubscribeChats();
+  unsubscribeChats = onSnapshot(chatQuery, (snap) => {
+    allChats = [];
+    snap.forEach(d => allChats.push({ id: d.id, ...d.data() }));
+    renderChatList();
+  });
+}
+
+/* ============================================================
+   RENDER CHAT LIST
+   ============================================================ */
+function renderChatList() {
+  const filter = ($('searchInput').value || '').toLowerCase();
+  chatListEl.innerHTML = '';
+
+  const items = [];
+
+  allChats.forEach(c => {
+    const otherUid = (c.members || []).find(m => m !== currentUser.uid);
+    const other = allUsers.find(u => u.id === otherUid);
+    if (!other) return;
+    items.push({
+      id: c.id,
+      name: c.isGroup ? c.name : (other.name || other.email),
+      avatar: c.isGroup ? null : other.avatar,
+      lastMsg: c.lastMessage || 'Belum ada pesan',
+      lastTime: c.lastMessageTime?.toDate?.() || null,
+      isGroup: !!c.isGroup,
+      unread: 0,
+      online: other.online,
+      uid: otherUid
+    });
+  });
+
+  allUsers.forEach(u => {
+    const exists = items.some(i => i.uid === u.id && !i.isGroup);
+    if (!exists) {
+      items.push({
+        id: null,
+        name: u.name || u.email,
+        avatar: u.avatar,
+        lastMsg: 'Klik untuk mulai chat',
+        lastTime: null,
+        isGroup: false,
+        unread: 0,
+        online: u.online,
+        uid: u.id
+      });
+    }
+  });
+
+  items.sort((a, b) => (b.lastTime?.getTime() || 0) - (a.lastTime?.getTime() || 0));
+
+  const filtered = items.filter(i => i.name.toLowerCase().includes(filter));
+
+  if (filtered.length === 0) {
+    chatListEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--wa-text2);font-size:14px">Tidak ada chat</div>';
+    return;
+  }
+
+  filtered.forEach(item => {
+    const initials = (item.name || '?').substring(0, 2).toUpperCase();
+    const avatarHtml = item.avatar ? `<img src="${item.avatar}">` : initials;
+    const timeStr = item.lastTime ? formatTime(item.lastTime) : '';
+    const div = document.createElement('div');
+    div.className = 'chat-item';
+    div.onclick = () => openChat(item);
+    div.innerHTML = `
+      <div class="chat-avatar">
+        ${avatarHtml}
+        ${item.online ? '<span class="online-dot"></span>' : ''}
+      </div>
+      <div class="chat-info">
+        <h4>${escapeHtml(item.name)}</h4>
+        <p>${escapeHtml(item.lastMsg)}</p>
+      </div>
+      <div class="chat-meta">
+        <span class="time">${timeStr}</span>
+        ${item.unread > 0 ? `<span class="badge">${item.unread}</span>` : ''}
+      </div>
+    `;
+    chatListEl.appendChild(div);
+  });
+}
+
+function formatTime(date) {
+  const now = new Date();
+  const d = new Date(date);
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) {
+    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t || '';
+  return d.innerHTML;
+}
+
+window.filterChats = () => renderChatList();
+
+/* ============================================================
+   OPEN CHAT
+   ============================================================ */
+window.openChat = async (item) => {
+  let chatId = item.id;
+  let otherUid = item.uid;
+
+  if (!chatId) {
+    const id = [currentUser.uid, otherUid].sort().join('_');
+    chatId = id;
+    await setDoc(doc(db, 'chats', chatId), {
+      id: chatId,
+      members: [currentUser.uid, otherUid],
+      lastMessage: '',
+      lastMessageTime: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      isGroup: false
+    }, { merge: true });
+  }
+
+  const otherSnap = await getDoc(doc(db, 'users', otherUid));
+  const other = otherSnap.data() || {};
+
+  currentChat = {
+    id: chatId,
+    uid: otherUid,
+    name: other.name || other.email || 'User',
+    avatar: other.avatar,
+    online: other.online
+  };
+
+  $('emptyState').style.display = 'none';
+  $('chatArea').style.display = 'block';
+  $('chatInputArea').style.display = 'flex';
+  $('chatHeader').style.display = 'flex';
+
+  const initials = (currentChat.name || '?').substring(0, 2).toUpperCase();
+  $('headerAvatar').innerHTML = currentChat.avatar ? `<img src="${currentChat.avatar}">` : initials;
+  $('headerName').textContent = currentChat.name;
+  $('headerStatus').textContent = currentChat.online ? 'online' : 'offline';
+
+  chatView.classList.add('show-mobile');
+  sidebar.classList.add('hide-mobile');
+
+  loadMessages(chatId);
+};
+
+/* ============================================================
+   LOAD MESSAGES
+   ============================================================ */
+function loadMessages(chatId) {
+  if (unsubscribeMessages) unsubscribeMessages();
+
+  const q = query(
+    collection(db, 'chats', chatId, 'messages'),
+    orderBy('createdAt', 'asc'),
+    limit(200)
+  );
+
+  unsubscribeMessages = onSnapshot(q, (snap) => {
+    chatArea.innerHTML = '';
+    snap.forEach(d => {
+      const m = d.data();
+      renderMessage(m, d.id);
+    });
+    scrollToBottom();
+  });
+}
+
+/* ============================================================
+   RENDER MESSAGE
+   ============================================================ */
+function renderMessage(msg, msgId) {
+  const isMe = msg.sender === currentUser.uid;
+  const div = document.createElement('div');
+  div.className = `message ${isMe ? 'sent' : 'received'}`;
+  div.dataset.id = msgId;
+
+  let mediaHtml = '';
+  if (msg.type === 'image') mediaHtml = `<img src="${msg.mediaUrl}" class="msg-image" onclick="previewMedia('image', '${msg.mediaUrl}')">`;
+  else if (msg.type === 'video') mediaHtml = `<video src="${msg.mediaUrl}" class="msg-video" controls></video>`;
+  else if (msg.type === 'audio') mediaHtml = `<audio src="${msg.mediaUrl}" class="msg-audio" controls></audio>`;
+  else if (msg.type === 'file') mediaHtml = `<a href="${msg.mediaUrl}" target="_blank" style="color:var(--wa-blue)"><i class="fas fa-file"></i> ${escapeHtml(msg.fileName || 'File')}</a>`;
+
+  const time = msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '...';
+  const tick = isMe ? (msg.read ? '<i class="fas fa-check-double read-tick"></i>' : '<i class="fas fa-check"></i>') : '';
+
+  div.innerHTML = `
+    ${mediaHtml}
+    ${msg.text ? `<div>${linkify(escapeHtml(msg.text))}</div>` : ''}
+    <div class="msg-meta">
+      <span>${time}</span>
+      ${tick}
+    </div>
+  `;
+  chatArea.appendChild(div);
+}
+
+function linkify(text) {
+  return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--wa-blue)">$1</a>');
+}
+
+function scrollToBottom() {
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+/* ============================================================
+   SEND MESSAGE
+   ============================================================ */
+window.sendMessage = async () => {
+  const text = messageInput.value.trim();
+  if (!text || !currentChat) return;
+
+  messageInput.value = '';
+  messageInput.style.height = 'auto';
+  onInputChange();
+
+  await addDoc(collection(db, 'chats', currentChat.id, 'messages'), {
+    sender: currentUser.uid,
+    text,
+    type: 'text',
+    createdAt: serverTimestamp(),
+    read: false
+  });
+
+  await updateDoc(doc(db, 'chats', currentChat.id), {
+    lastMessage: text,
+    lastMessageTime: serverTimestamp()
+  });
+};
+
+window.onInputChange = () => {
+  const hasText = messageInput.value.trim().length > 0;
+  sendBtn.style.display = hasText ? 'flex' : 'none';
+  micBtn.style.display = hasText ? 'none' : 'flex';
+  messageInput.style.height = 'auto';
+  messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
+};
+
+/* ============================================================
+   ATTACH MEDIA
+   ============================================================ */
+window.attachMedia = (accept, capture) => {
+  toggleMediaMenu(false);
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = accept;
+  if (capture) input.capture = 'environment';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) return showToast('Maks 10MB');
+
+    showToast('Uploading...');
+    try {
+      const storageRef = ref(storage, `chats/${currentChat.id}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      let type = 'file';
+      if (file.type.startsWith('image')) type = 'image';
+      else if (file.type.startsWith('video')) type = 'video';
+      else if (file.type.startsWith('audio')) type = 'audio';
+
+      await addDoc(collection(db, 'chats', currentChat.id, 'messages'), {
+        sender: currentUser.uid,
+        type,
+        mediaUrl: url,
+        fileName: file.name,
+        createdAt: serverTimestamp(),
+        read: false
+      });
+
+      await updateDoc(doc(db, 'chats', currentChat.id), {
+        lastMessage: `📎 ${type}`,
+        lastMessageTime: serverTimestamp()
+      });
+      showToast('Terkirim');
+    } catch (err) {
+      showToast('Gagal upload: ' + err.message);
+    }
+  };
+  input.click();
+};
+
+window.toggleMediaMenu = (force) => {
+  const menu = $('mediaMenu');
+  if (typeof force === 'boolean') {
+    menu.classList.toggle('show', force);
+  } else {
+    menu.classList.toggle('show');
+  }
+};
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+window.openProfileDrawer = () => {
+  $('profileDrawer').classList.add('show');
+  $('drawerOverlay').classList.add('show');
+};
+window.closeProfileDrawer = () => {
+  $('profileDrawer').classList.remove('show');
+  $('drawerOverlay').classList.remove('show');
+};
+window.showChatProfile = () => {
+  if (!currentChat) return;
+  const initials = (currentChat.name || '?').substring(0, 2).toUpperCase();
+  $('modalAvatar').innerHTML = currentChat.avatar ? `<img src="${currentChat.avatar}">` : initials;
+  $('modalName').textContent = currentChat.name;
+  $('modalEmail').textContent = currentChat.online ? 'Online' : 'Offline';
+  $('profileModal').classList.add('show');
+};
+window.closeModal = (id) => $(id).classList.remove('show');
+
+/* ============================================================
+   PREVIEW
+   ============================================================ */
+window.previewMedia = (type, src) => {
+  $('previewContent').innerHTML = type === 'image'
+    ? `<img src="${src}">`
+    : `<video src="${src}" controls autoplay></video>`;
+  $('previewOverlay').classList.add('show');
+};
+window.closePreview = () => {
+  $('previewOverlay').classList.remove('show');
+  setTimeout(() => $('previewContent').innerHTML = '', 300);
+};
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+window.closeChatMobile = () => {
+  chatView.classList.remove('show-mobile');
+  sidebar.classList.remove('hide-mobile');
+  if (unsubscribeMessages) unsubscribeMessages();
+};
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer;
+window.showToast = (msg) => {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+};
+
+/* ============================================================
+   INIT
+   ============================================================ */
+messageInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  const menu = $('mediaMenu');
+  if (menu.classList.contains('show') && !menu.contains(e.target) && !e.target.closest('.chat-input-area')) {
+    menu.classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>
